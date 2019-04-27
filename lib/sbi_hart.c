@@ -166,7 +166,7 @@ static int pmp_init(struct sbi_scratch *scratch, u32 hartid)
 	fw_size_log2 = log2roundup(scratch->fw_size);
 	fw_start     = scratch->fw_start & ~((1UL << fw_size_log2) - 1UL);
 
-	pmp_set(0, 0, fw_start, fw_size_log2);
+	pmp_set(0, PMP_R | PMP_W | PMP_X, fw_start, fw_size_log2);
 
 	count = sbi_platform_pmp_region_count(plat, hartid);
 	if ((PMP_COUNT - 1) < count)

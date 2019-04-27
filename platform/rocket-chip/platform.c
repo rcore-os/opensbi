@@ -57,6 +57,13 @@ static int platform_early_init(bool cold_boot)
  */
 static int platform_final_init(bool cold_boot)
 {
+	void *fdt;
+
+	if (!cold_boot)
+		return 0;
+
+	fdt = sbi_scratch_thishart_arg1_ptr();
+	plic_fdt_fixup(fdt, "riscv,plic0");
 	return 0;
 }
 
