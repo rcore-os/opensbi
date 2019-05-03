@@ -132,7 +132,7 @@ static int platform_console_init(void)
 static void platform_console_putc(char ch)
 {
   spin_lock(&htif_lock);
-  __set_tohost(1, 1, ch);
+    __set_tohost(1, 1, ch);
   spin_unlock(&htif_lock);
 }
 
@@ -141,19 +141,16 @@ static void platform_console_putc(char ch)
  */
 static int platform_console_getc(void)
 {
-
   spin_lock(&htif_lock);
-  sbi_printf("fuck! getc");
-    /*__check_fromhost();*/
-    /*int ch = htif_console_buf;*/
-    /*if (ch >= 0) {*/
-      /*htif_console_buf = -1;*/
-      /*__set_tohost(1, 0, 0);*/
-    /*}*/
+    __check_fromhost();
+    int ch = htif_console_buf;
+    if (ch >= 0) {
+      htif_console_buf = -1;
+      __set_tohost(1, 0, 0);
+    }
   spin_unlock(&htif_lock);
 
-  /*return ch - 1;*/
-  return 254;
+  return ch - 1;
 }
 
 /*
