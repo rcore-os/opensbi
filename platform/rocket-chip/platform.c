@@ -27,8 +27,8 @@
 
 #define UART0_BASE_ADDR 0x60000000
 
-volatile uint32_t *uart0_rx_fifo = (uint32_t *)(UART0_BASE_ADDR + 0x00);
-volatile uint32_t *uart0_tx_fifo = (uint32_t *)(UART0_BASE_ADDR + 0x04);
+volatile uint32_t *uart0_rx_fifo  = (uint32_t *)(UART0_BASE_ADDR + 0x00);
+volatile uint32_t *uart0_tx_fifo  = (uint32_t *)(UART0_BASE_ADDR + 0x04);
 volatile uint32_t *uart0_stat_reg = (uint32_t *)(UART0_BASE_ADDR + 0x08);
 volatile uint32_t *uart0_ctrl_reg = (uint32_t *)(UART0_BASE_ADDR + 0x0C);
 
@@ -92,7 +92,6 @@ static int platform_final_init(bool cold_boot)
 		return 0;
 
 	fdt = sbi_scratch_thishart_arg1_ptr();
-	sbi_printf("fdt %p", fdt);
 	plic_fdt_fixup(fdt, "riscv,plic0");
 	return 0;
 }
@@ -133,8 +132,8 @@ static int platform_pmp_region_info(u32 hartid, u32 index, ulong *prot,
  */
 static int platform_console_init(void)
 {
-  // 0b10011 = Enable Intr | Clear tx/rx FIFO
-  *uart0_ctrl_reg = 0x13;
+	// 0b10011 = Enable Intr | Clear tx/rx FIFO
+	*uart0_ctrl_reg = 0x13;
 	return 0;
 }
 
@@ -143,13 +142,14 @@ static int platform_console_init(void)
  */
 static void platform_console_putc(char ch)
 {
-  // putchar can block 
-  // write to both htif and uart
+	// putchar can block
+	// write to both htif and uart
 	spin_lock(&io_lock);
 	__set_tohost(1, 1, ch);
-  // wait until tx fifo not full
-  while ((*uart0_stat_reg) & (1 << 3));
-  *uart0_tx_fifo = (uint32_t)ch;
+	// wait until tx fifo not full
+	while ((*uart0_stat_reg) & (1 << 3))
+		;
+	*uart0_tx_fifo = (uint32_t)ch;
 	spin_unlock(&io_lock);
 }
 
@@ -158,25 +158,21 @@ static void platform_console_putc(char ch)
  */
 static int platform_console_getc(void)
 {
-  // getchar should return -1 on no data
-  // read from htif first and then uart
+	// getchar should return -1 on no data
+	// read from uart
 	spin_lock(&io_lock);
-  __check_fromhost();
-  int ch = htif_console_buf;
-  if (ch >= 0) {
-    htif_console_buf = -1;
-    __set_tohost(1, 0, 0);
-    ch = ch - 1;
-  } else {
-    if ((*uart0_stat_reg) & (1 << 0)) {
-      // rx fifo empty
-      ch = -1;
-    } else {
-      ch = *uart0_rx_fifo;
-    }
-  }
-  spin_unlock(&io_lock);
-  return ch;
+	int ch;
+	if ((*uart0_stat_reg) & (1 << 0)) {
+		ch = *uart0_rx_fifo;
+		// disable intr
+		*uart0_ctrl_reg = 0;
+		// enable intr
+	} else {
+		// rx fifo empty
+		ch = -1;
+	}
+	spin_unlock(&io_lock);
+	return ch;
 }
 
 /*
@@ -224,7 +220,6 @@ static void platform_ipi_send(u32 target_hart)
 {
 	/* Example if the generic CLINT driver is used */
 	clint_ipi_send(target_hart);
-	platform_console_putc('i');
 }
 
 /*
@@ -234,7 +229,6 @@ static void platform_ipi_sync(u32 target_hart)
 {
 	/* Example if the generic CLINT driver is used */
 	clint_ipi_sync(target_hart);
-	platform_console_putc('s');
 }
 
 /*
@@ -244,7 +238,6 @@ static void platform_ipi_clear(u32 target_hart)
 {
 	/* Example if the generic CLINT driver is used */
 	clint_ipi_clear(target_hart);
-	platform_console_putc('c');
 }
 
 /*
@@ -280,7 +273,6 @@ static u64 platform_timer_value(void)
 static void platform_timer_event_start(u64 next_event)
 {
 	/* Example if the generic CLINT driver is used */
-	/*sbi_printf("Timer start\n");*/
 	clint_timer_event_start(next_event);
 }
 
@@ -290,7 +282,6 @@ static void platform_timer_event_start(u64 next_event)
 static void platform_timer_event_stop(void)
 {
 	/* Example if the generic CLINT driver is used */
-	sbi_printf("Timer stop\n");
 	clint_timer_event_stop();
 }
 
