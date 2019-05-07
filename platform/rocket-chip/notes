@@ -1,3 +1,7 @@
+Interrupt map (2 harts 3 interrupts):
+  [1, 2] => target
+  [3, 3] => frontend
+
 /dts-v1/;
 
 / {
@@ -98,4 +102,5 @@ Generated Address Map
          2000000 -  2010000 ARW   clint@2000000
          c000000 - 10000000 ARW   interrupt-controller@c000000
         10015000 - 10016000 ARW   blkdev-controller@10015000
+        60000000 - 80000000  RWX  mmio-port-axi4@60000000
         80000000 - 90000000  RWXC memory@80000000
