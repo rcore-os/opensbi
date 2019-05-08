@@ -146,8 +146,9 @@ static void platform_console_putc(char ch)
 	// write to both htif and uart
 	spin_lock(&io_lock);
 	__set_tohost(1, 1, ch);
-	// wait until tx fifo not full
-	while ((*uart0_stat_reg) & (1 << 3))
+	// because tx fifo full generates an interrupts
+	// we don't want it, so we just wait until tx fifo empty
+	while (((*uart0_stat_reg) & (1 << 2)) == 0)
 		;
 	*uart0_tx_fifo = (uint32_t)ch;
 	spin_unlock(&io_lock);
@@ -164,9 +165,6 @@ static int platform_console_getc(void)
 	int ch;
 	if ((*uart0_stat_reg) & (1 << 0)) {
 		ch = *uart0_rx_fifo;
-		// disable intr
-		*uart0_ctrl_reg = 0;
-		// enable intr
 	} else {
 		// rx fifo empty
 		ch = -1;
